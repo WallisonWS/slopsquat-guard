@@ -102,5 +102,34 @@
     document.getElementById('auditBtn').addEventListener('click', runAudit);
     runAudit();
   </script>
+  <!-- Trilingual Auto-Detect Language Switcher (EN / PT-BR / ES) -->
+  <div id="wallison-i18n-bar" style="position:fixed;bottom:16px;left:16px;z-index:9999;display:flex;gap:4px;background:rgba(15,22,38,0.92);backdrop-filter:blur(8px);border:1px solid #334155;padding:5px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.45);font-family:system-ui,sans-serif;">
+    <button data-wl="en" style="border:none;background:transparent;color:#cbd5e1;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;">🇺🇸 EN</button>
+    <button data-wl="pt" style="border:none;background:transparent;color:#cbd5e1;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;">🇧🇷 PT</button>
+    <button data-wl="es" style="border:none;background:transparent;color:#cbd5e1;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:700;">🇪🇸 ES</button>
+  </div>
+  <script>
+  (function(){
+    const I18N = {"pt":{"h":"📦 Slopsquat Guard — Defesa Contra Alucinação de Pacotes de IA (Slopsquatting)","p":"Antes de rodar npm/pip sugerido por IA, audite seu package.json contra pacotes alucinados (Slopsquatting), typosquatting e scripts maliciosos de postinstall."},"en":{"h":"📦 Slopsquat Guard — Defend Against AI Package Hallucination \u0026 Supply-Chain Attacks","p":"Before running AI-suggested npm/pip installs, audit package.json against Slopsquatting (hallucinated packages), typosquatting \u0026 malicious postinstall hooks."},"es":{"h":"📦 Slopsquat Guard — Defensa Contra Paquetes Alucinados por IA (Slopsquatting)","p":"Antes de ejecutar npm/pip sugerido por IA, audita package.json contra paquetes inexistentes (Slopsquatting), typosquatting y scripts postinstall maliciosos."}};
+    const btns = document.querySelectorAll('#wallison-i18n-bar button');
+    const saved = localStorage.getItem('ws_global_lang');
+    const nav = (navigator.language || 'en').toLowerCase();
+    let cur = (saved && I18N[saved]) ? saved : (nav.startsWith('pt') ? 'pt' : nav.startsWith('es') ? 'es' : 'en');
+    function apply(l){
+      cur = l; localStorage.setItem('ws_global_lang', l);
+      const h1 = document.querySelector('.hero h1, .hdr h1');
+      const p = document.querySelector('.hero p, .hdr p');
+      if (h1 && I18N[l].h) h1.textContent = I18N[l].h;
+      if (p && I18N[l].p) p.textContent = I18N[l].p;
+      btns.forEach(b => {
+        const active = b.dataset.wl === l;
+        b.style.background = active ? '#38bdf8' : 'transparent';
+        b.style.color = active ? '#060a14' : '#cbd5e1';
+      });
+    }
+    btns.forEach(b => b.addEventListener('click', () => apply(b.dataset.wl)));
+    apply(cur);
+  })();
+  </script>
 </body>
 </html>
